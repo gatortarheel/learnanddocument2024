@@ -1,6 +1,6 @@
 # Reference for Copy/Paste
 
-[/resources/tobeorganized.md](To Be Organized)
+[resources/tobeorganized.md](To Be Organized)
 
 
 ### Design Patterns
