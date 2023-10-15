@@ -1,0 +1,138 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.22.6.54827",
+      "templateHash": "15991434191919203094"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "westus3"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "[format('toylaunch{0}', uniqueString(resourceGroup().id))]"
+    },
+    "appServiceAppName": {
+      "type": "string",
+      "defaultValue": "[format('toylaunch{0}', uniqueString(resourceGroup().id))]"
+    },
+    "environmentType": {
+      "type": "string",
+      "allowedValues": [
+        "nonprod",
+        "prod"
+      ]
+    }
+  },
+  "variables": {
+    "storageAccountSkuName": "[if(equals(parameters('environmentType'), 'prod'), 'Standard_GRS', 'Standard_LRS')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[variables('storageAccountSkuName')]"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Hot"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "appService",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "appServiceAppName": {
+            "value": "[parameters('appServiceAppName')]"
+          },
+          "environmentType": {
+            "value": "[parameters('environmentType')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.22.6.54827",
+              "templateHash": "6679496774495397960"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "securestring"
+            },
+            "appServiceAppName": {
+              "type": "securestring"
+            },
+            "environmentType": {
+              "type": "securestring",
+              "allowedValues": [
+                "nonprod",
+                "prod"
+              ]
+            }
+          },
+          "variables": {
+            "appServicePlanName": "toy-product-launch-plan",
+            "appServicePlanSkuName": "[if(equals(parameters('environmentType'), 'prod'), 'P2V3', 'F1')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2022-03-01",
+              "name": "[variables('appServicePlanName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "[variables('appServicePlanSkuName')]"
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2022-03-01",
+              "name": "[parameters('appServiceAppName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                "httpsOnly": true
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "appServiceAppHostName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/sites', parameters('appServiceAppName')), '2022-03-01').defaultHostName]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "appServiceAppHostName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'appService'), '2022-09-01').outputs.appServiceAppHostName.value]"
+    }
+  }
+}
