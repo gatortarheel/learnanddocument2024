@@ -1,0 +1,54 @@
+stages:
+- stage:  ConsoleValidation
+  displayName: 'Console Validation POC'
+  jobs:
+  - job: RunConsoleApplication
+    displayName: 'Run Console Application'
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - task: PowerShell@2
+      name: ConsoleOutputTask
+      displayName: 'RunConsoleValidation'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Run the console application
+          $output = .\testconsoleappfordevops\testconsoleappfordevops.exe
+          Write-Output "Output of the console application: $output"
+          Write-Host "##vso[task.setvariable variable=consoleVal;isOutput=true]$output"
+                        
+- stage: ValidationDecision
+  dependsOn:  ConsoleValidation
+  jobs:
+  - job: SetConsoleAppVariable
+    variables:
+      consoleValidationResult: $[stageDependencies.ConsoleValidation.RunConsoleApplication.outputs['ConsoleOutputTask.consoleVal']]
+    steps:
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+           Write-Host "Here is your consoleValidationResult: $(consoleValidationResult)"
+    - task: PowerShell@2
+      inputs:
+       targetType: 'inline'
+       script: |
+        if ("$(consoleValidationResult)" -ne "TRUE") {
+            Write-Host "Deployment should not continue."
+            exit -1
+           }
+           else
+           {
+             Write-Host "Add web deployment steps here"
+           }
+           
+- stage: ConditionalStage
+  displayName: Conditional Stage
+  dependsOn: ValidationDecision  # Ensure the ValidationDecision stage has completed before executing this stage
+  condition: succeeded()
+  jobs:
+  - job: ConditionalJob
+    displayName: Conditional Job
+    steps:
+    - script: echo "This job will execute because consoleValidationResult is true"
