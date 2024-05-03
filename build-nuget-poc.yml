@@ -1,0 +1,60 @@
+steps:
+- checkout: ${{ parameters.gitPath }}@${{ parameters.branchName }}
+  clean: true
+
+- task: PowerShell@2
+  name: 'WriteOutParameterVersion'
+  inputs:
+    targetType: 'inline'
+    script: |
+      $env:NugetVersion = "${{ parameters.version }}"
+      Write-Host ("##vso[task.setvariable variable=NugetVersion]$env:NugetVersion")
+      Write-Host "Set environment variable NugetVersion to: $env:NugetVersion"
+
+- task: NuGetToolInstaller@1
+  name: 'NuGetToolInstaller'
+  displayName: 'NuGet Tool Installer'
+
+- task: NuGetCommand@2
+  name: 'NuGetRestore'
+  displayName: 'NuGet Command Restore'
+  inputs:
+    command: 'restore'
+    restoreSolution: ${{ parameters.solutionWildCard }}
+    feedsToUse: 'select'
+    vstsFeed: '0ac9e6d4-7365-4d85-8c42-3f42f0b10879'
+    includeNuGetOrg: true  
+
+
+- task: VSBuild@1
+  inputs:
+    solution: ${{ parameters.solutionWildCard }} 
+    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+    platform: 'Any CPU'
+    configuration: 'Release'
+
+- task: PowerShell@2
+  name: 'WriteOutParameterVersion2'
+  inputs:
+    targetType: 'inline'
+    script: |
+      $env:NugetVersion = "${{ parameters.version }}"
+      Write-Host ("##vso[task.setvariable variable=NugetVersion]$env:NugetVersion")
+      Write-Host "222 - Set environment variable NugetVersion to: $env:NugetVersion"
+
+- task: NuGetCommand@2
+  name: 'PackTheNuGet'
+  inputs:
+    command: pack
+    packagesToPack: '**/*.csproj'
+    configuration: 'Release'
+    versioningScheme: 'byEnvVar'
+    versionEnvVar: NugetVersion
+
+- task: NuGetCommand@2
+  displayName: 'NuGetPublish'
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+    nuGetFeedType: 'internal'
+    publishVstsFeed: '0ac9e6d4-7365-4d85-8c42-3f42f0b10879'
