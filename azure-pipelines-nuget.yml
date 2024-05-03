@@ -1,0 +1,63 @@
+resources:
+  repositories:
+    - repository: devops
+      type: git
+      name: devops/devops
+      ref: refs/heads/pipelines-poc 
+
+trigger:
+  branches:
+    include:
+    - 'update-later'
+
+pool:
+    vmImage: 'windows-latest'
+stages:
+- stage: GetPreviousVersionNumber
+  jobs:
+  - job: CalculateNextVersionNumber
+    steps:
+    - checkout: devops
+    - task: PowerShell@2
+      displayName: List all Files in $(System.DefaultWorkingDirectory)
+      inputs:
+        targetType: 'inline'
+        pwsh: true
+        script: |
+          Get-ChildItem -Path $(System.DefaultWorkingDirectory) -Recurse
+    - task: PowerShell@2
+      name: PowerShellOutput # This name will be used to reference the output variable
+      displayName: 'Run PowerShell Script'
+      inputs:
+        filePath: $(System.DefaultWorkingDirectory)/PowerShell/get-next-nuget-version.ps1 #PowerShell/get-next-nuget-version.ps1@devops
+        errorActionPreference: 'stop'
+    - task: PowerShell@2
+      displayName: 'Display Version Number'
+      inputs:
+        targetType: 'inline'
+        script: |
+           Write-Host "Next version number: $(PowerShellOutput.nextVersion)"
+    - task: PowerShell@2
+      name: PassTheVariableStage
+      displayName: 'PassTheVariableStage'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "##vso[task.setvariable variable=nextVersion;isOutput=true]$(PowerShellOutput.nextVersion)"
+  - job: Build
+    dependsOn: CalculateNextVersionNumber
+    variables:
+      versionNumber: $[ dependencies.CalculateNextVersionNumber.outputs['PassTheVariableStage.nextVersion'] ]
+    steps:
+    - template: azure-pipelines/job-templates/build-nuget-poc.yml@devops
+      parameters:
+        artifactName: 'vdacsapiclient'
+        branchName: 'main'
+        gitPath: 'git://VDACSapiClient/VDACSapiClient'
+        repoName: 'VDACSapiClient/VDACSapiClient'
+        repository: 'VDACSapiClient'
+        solutionPath: 'VDACSapiClient/VDACSapiClient.sln'
+        solutionWildCard: '**/*.sln'
+        solution: '**/VDACSapiClient/VDACSapiClient.sln'
+        version:  $(versionNumber)
+
