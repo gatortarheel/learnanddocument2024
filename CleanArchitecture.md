@@ -5,7 +5,12 @@ Source: https://www.geeksforgeeks.org/complete-guide-to-clean-architecture/
 Complete Guide to Clean Architecture
 Last Updated : 10 Jun, 2024
 
-Clean Architecture is a software design approach that promotes the separation of concerns, ensuring systems are maintainable, scalable, and testable. By organizing code into distinct layers, each with a clear responsibility, Clean Architecture allows developers to build robust, flexible applications. This guide provides a comprehensive overview of Clean Architecture principles, illustrating how to structure your codebase for optimal performance and ease of maintenance.
+Clean Architecture 
+- software design approach 
+- promotes the separation of concerns
+- ensuring systems are maintainable, scalable, and testable
+
+By organizing code into distinct layers, each with a clear responsibility, Clean Architecture allows developers to build robust, flexible applications. This guide provides a comprehensive overview of Clean Architecture principles, illustrating how to structure your codebase for optimal performance and ease of maintenance.
 Complete-Guide-to-Clean-Architecture
 
 Important Topics for Clean Architecture
