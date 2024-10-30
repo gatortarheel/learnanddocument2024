@@ -170,3 +170,57 @@ public class TokenHandler : DelegatingHandler
       public string? AllowedHosts { get; set; }
   }
   ```
+
+# Console App
+
+## credit: ClaudeAI
+https://claude.ai/chat/25010d19-ca36-41f8-aabe-4ba8c662f81b
+
+1. Install the required NuGet package:
+   ```
+   dotnet add package Microsoft.Extensions.Http
+   ```
+
+2. In your `Program.cs` file, add the following using statements:
+   ```csharp
+   using Microsoft.Extensions.DependencyInjection;
+   using Microsoft.Extensions.Hosting;
+   ```
+
+3. In the `Main` method, create a new `IHostBuilder` and configure the `HttpClientFactory`:
+   ```csharp
+   using IHost host = Host.CreateDefaultBuilder(args)
+       .ConfigureServices((_, services) =>
+           services.AddHttpClient())
+       .Build();
+
+   // Use the HttpClient here
+   using var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+   ```
+
+Here's the complete `Program.cs` file:
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+using IHost host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices((_, services) =>
+        services.AddHttpClient())
+    .Build();
+
+using var httpClient = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+
+// Use the HttpClient here
+```
+
+The key steps are:
+
+1. Install the `Microsoft.Extensions.Http` NuGet package.
+2. Add the required using statements.
+3. Create a new `IHostBuilder` and configure the `HttpClientFactory` by calling `services.AddHttpClient()`.
+4. Retrieve an instance of the `IHttpClientFactory` from the dependency injection container and use it to create an `HttpClient` instance.
+
+This setup allows you to use the `HttpClient` throughout your console application with the benefits of the `HttpClientFactory`, such as request retries, automatic disposal, and more.
+
+Let me know if you have any other questions!
